@@ -30,7 +30,7 @@
       };
     in rec {
       # `nix develop`
-      devShell = pkgs.mkShell { buildInputs = with pkgs; [ go_1_20 gopls goimports go-tools ]; };
+      devShell = pkgs.mkShell { buildInputs = with pkgs; [ go_1_20 gopls gotools ]; };
 
       # `nix build`
       packages = with pkgs; {
