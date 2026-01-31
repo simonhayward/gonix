@@ -45,7 +45,7 @@ jobs:
           default_bump: patch
 
       - name: Prepare Artifact
-        run: cp ./result/bin/gonix ./gonix-${{ github.ref_name }}-linux-amd64
+        run: cp ./result/bin/gonix ./gonix-${{ steps.tag_version.outputs.new_tag }}-linux-amd64
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
