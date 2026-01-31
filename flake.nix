@@ -11,9 +11,13 @@
       let
         pkgs = import nixpkgs { inherit system; };
         
-        appVersion = if (builtins.pathExists ./version.nix) 
-          then (import ./version.nix) 
-          else (self.shortRev or "dev-local");
+        appVersion = 
+        let 
+          envV = builtins.getEnv "APP_VERSION"; 
+        in
+        if envV != "" then envV 
+        else if (self ? shortRev) then self.shortRev 
+        else "dev";
       in
       {
         packages.default = pkgs.buildGoModule rec{
@@ -31,7 +35,7 @@
           # self.lastModified is the Unix timestamp of the last commit
           # builtins.toString converts it for the ldflags
           ldflags = [
-            "-X main.Version=${version}"
+            "-X main.Version=${appVersion}"
             "-X main.Commit=${self.rev or "dirty"}"
             "-X main.BuildTime=${builtins.toString self.lastModified}"
           ];
