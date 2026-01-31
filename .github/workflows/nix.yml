@@ -17,8 +17,5 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v16
 
-      - name: Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v8
-
       - name: Run Go Tests
         run: nix develop -c go test -v ./...
