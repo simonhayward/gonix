@@ -10,11 +10,16 @@
     utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+
+        appVersion = if (builtins.pathExists ./version.nix) 
+                   then (import ./version.nix) 
+                   else "dev-local";
+
       in
       {
         packages.default = pkgs.buildGoModule rec{
           pname = "gonix";
-          version = builtins.getEnv "VERSION"; # Reads the env var from the workflow
+          version = appVersion;
           src = ./.;
 
           # You must update this hash whenever go.mod changes.
