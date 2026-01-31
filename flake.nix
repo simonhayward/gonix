@@ -14,7 +14,7 @@
       {
         packages.default = pkgs.buildGoModule rec{
           pname = "gonix";
-          version = "0.0.1-${self.shortRev or "dirty"}"; 
+          version = "0.0.1-${self.shortRev or "dirty"}";
           src = ./.;
 
           # You must update this hash whenever go.mod changes.
