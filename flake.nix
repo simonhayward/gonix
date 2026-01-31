@@ -14,7 +14,7 @@
       {
         packages.default = pkgs.buildGoModule rec{
           pname = "gonix";
-          version = "0.0.0";
+          version = builtins.getEnv "VERSION"; # Reads the env var from the workflow
           src = ./.;
 
           # You must update this hash whenever go.mod changes.
