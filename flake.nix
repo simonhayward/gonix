@@ -11,9 +11,9 @@
       let
         pkgs = import nixpkgs { inherit system; };
         
-        appVersion = let
-          envVar = builtins.getEnv "APP_VERSION";
-        in if envVar != "" then envVar else (self.shortRev or "dev");
+        appVersion = if (builtins.pathExists ./version.nix) 
+          then (import ./version.nix) 
+          else (self.shortRev or "dev-local");
       in
       {
         packages.default = pkgs.buildGoModule rec{

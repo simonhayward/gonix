@@ -44,12 +44,19 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
 
-      - name: Build
-        run: nix build . --impure
-        env:
-          APP_VERSION: ${{ steps.tag_version.outputs.new_tag || github.sha }}
+      - name: Create version file
+        run: |
+          VERSION="${{ steps.tag_version.outputs.new_tag }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(git rev-parse --short HEAD)
+          fi
+          
+          # Write as a valid Nix string
+          echo "\"$VERSION\"" > version.nix
+          
+          git add version.nix
 
-      - name: Build with Version
+      - name: Build
         run: nix build .
 
       - name: Prepare Artifact
@@ -65,3 +72,4 @@ jobs:
           files: ./gonix-${{ steps.tag_version.outputs.new_tag }}-linux-amd64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
