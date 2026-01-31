@@ -1,50 +1,28 @@
 {
-  description = "An example Go package";
+  description = "Go development environment";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/nixpkgs-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils}:
-    # Generate a user-friendly version number.
-    let version = builtins.substring 0 8 self.lastModifiedDate;
-    in {
-      overlay = final: prev:
-        let pkgs = nixpkgs.legacyPackages.${prev.system};
-        in rec {
-          gonix = pkgs.buildGo120Module rec {
-            pname = "gonix";
-            inherit version;
-            src = pkgs.nix-gitignore.gitignoreSource [ ] ./.;
+  outputs = { self, nixpkgs, utils }:
+    utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs { inherit system; };
+      in
+      {
+        devShells.default = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            go_1_25
+            sqlite        # Provides SQLite 3.45+
+            pkg-config    # Needed if building go-sqlite3 with CGO
+          ];
 
-            vendorSha256 = "sha256-8SfbzJ/uER7LS9EhdhgG5K18WLC2AbJAPLozFyZ5mJo=";
-          };
+          shellHook = ''
+            echo "SQLite version: $(sqlite3 --version)"
+            echo "Go version: $(go version)"
+          '';
         };
-    }
-    //flake-utils.lib.eachDefaultSystem
-    (system:
-    let pkgs = import nixpkgs {
-        overlays = [ self.overlay ];
-        inherit system;
-      };
-    in rec {
-      # `nix develop`
-      devShell = pkgs.mkShell { buildInputs = with pkgs; [ go_1_20 gopls gotools ]; };
-
-      # `nix build`
-      packages = with pkgs; {
-        inherit gonix;
-      };
-
-      defaultPackage = pkgs.gonix;
-
-      # `nix run`
-      apps.gonix = flake-utils.lib.mkApp {
-        drv = packages.gonix;
-      };
-      defaultApp = apps.gonix;
-
-      overlays.default = self.overlay;
-    });
+      });
 }

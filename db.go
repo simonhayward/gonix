@@ -3,10 +3,9 @@ package gonix
 import (
 	"database/sql"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
-	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -27,7 +26,6 @@ func NewSQLiteDB(f string, options ...func(*sql.DB)) (*SQLiteDB, error) {
 		return nil, err
 	}
 
-	requiredCompiledOptions(db)
 	initDb(db)
 	for _, option := range options {
 		option(db)
@@ -50,40 +48,15 @@ func openDB(f string) (*sql.DB, error) {
 
 func initDb(db *sql.DB) {
 	for k, v := range map[string]string{
-		"foreign_keys": "ON",
-		"busy_timeout": "5000",
-		"journal_mode": "WAL",
+		"foreign_keys": "ON",     // foreign key constraint enforcement
+		"busy_timeout": "5000",   // wait for up to 5,000 milliseconds (5 seconds) before failing with a "database is locked"
+		"journal_mode": "WAL",    // Write-Ahead Logging mode - allows concurrent reads and writes; readers no longer block writers, and a writer no longer blocks readers
+		"synchronous":  "NORMAL", // sync data to the disk at critical moments but not as aggressively as the default
 	} {
 		_, err := db.Exec(fmt.Sprintf("PRAGMA %s=%s", k, v))
 
 		if err != nil {
-			log.Fatalf(err.Error())
-		}
-	}
-}
-
-func requiredCompiledOptions(db *sql.DB) {
-	rows, err := db.Query("pragma compile_options")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	var compileOptions string
-	for rows.Next() {
-		var s string
-		err = rows.Scan(&s)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		compileOptions += fmt.Sprintf(" %s ", s)
-	}
-	for _, check := range []string{
-		"ENABLE_MATH_FUNCTIONS",
-		"ENABLE_FTS5",
-	} {
-		if !strings.Contains(compileOptions, fmt.Sprintf(" %s ", check)) {
-			log.Fatalf("compile option: %s required", check)
+			log.Fatalf("%s", err.Error())
 		}
 	}
 }
@@ -93,10 +66,10 @@ func LogVersion(db *sql.DB) {
 	err := db.QueryRow("select sqlite_version()").Scan(&version)
 
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("%s", err.Error())
 	}
 
-	log.Printf("version: %s", version)
+	log.Printf("sqlite version: %s", version)
 }
 
 func LogOptions(db *sql.DB) {
@@ -126,22 +99,14 @@ func LogOptions(db *sql.DB) {
 	}
 }
 
-type User struct {
-	ID      int
-	Created time.Time
-}
+func InsertRecord[T any](db *sql.DB, table string, data T) error {
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
 
-func (s *SQLiteDB) SaveUser(u *User) error {
-	result, err := s.db.Exec("INSERT OR REPLACE INTO Users (ID, Created) VALUES (?, ?)", u.ID, u.Created.Unix())
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows != 1 {
-		return fmt.Errorf("expected to affect 1 row, affected %d", rows)
-	}
-	return nil
+	query := fmt.Sprintf("INSERT INTO %s (data) VALUES (jsonb(?))", table)
+	_, err = db.Exec(query, bytes)
+
+	return err
 }
