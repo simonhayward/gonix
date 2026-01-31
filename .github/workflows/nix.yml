@@ -19,3 +19,9 @@ jobs:
 
       - name: Run Go Tests
         run: nix develop -c go test -v ./...
+    
+      - name: build nix default package
+        run: nix build .
+
+      - name: Check Build Output
+        run: ./result/bin/gonix --version

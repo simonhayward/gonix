@@ -2,7 +2,6 @@ package gonix
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -24,9 +23,6 @@ func Run() error {
 	if sqlite, err = NewSQLiteDB(sqlitefile, LogOptions, LogVersion); err != nil {
 		return fmt.Errorf("NewSQLiteDB(%s): %w", sqlitefile, err)
 	}
-	log.Printf("temp db: %s. ctrl-d to exit", sqlitefile)
-
-	// Blocks and waits for Ctrl+D (EOF)
-	_, _ = io.ReadAll(os.Stdin)
+	log.Printf("temp db: %s", sqlitefile)
 	return nil
 }
