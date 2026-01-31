@@ -63,3 +63,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build Output Version
+        run: ./gonix-${{ steps.tag_version.outputs.new_tag }}-linux-amd64 --version
