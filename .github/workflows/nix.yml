@@ -9,12 +9,16 @@ on:
       - main
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
-      - uses: cachix/install-nix-action@v16
+      - uses: actions/checkout@v4
 
-      - name: Run build
-        run: nix build
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v16
+
+      - name: Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Run Go Tests
+        run: nix develop -c go test -v ./...
