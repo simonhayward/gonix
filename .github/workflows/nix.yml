@@ -44,8 +44,10 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
 
-      - name: Write version to file
-        run: echo "\"${{ steps.tag_version.outputs.new_tag }}\"" > version.nix
+      - name: Build
+        run: nix build . --impure
+        env:
+          APP_VERSION: ${{ steps.tag_version.outputs.new_tag || github.sha }}
 
       - name: Build with Version
         run: nix build .

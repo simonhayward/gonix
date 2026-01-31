@@ -10,11 +10,10 @@
     utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-
-        appVersion = if (builtins.pathExists ./version.nix) 
-                   then (import ./version.nix) 
-                   else "dev-local";
-
+        
+        appVersion = let
+          envVar = builtins.getEnv "APP_VERSION";
+        in if envVar != "" then envVar else (self.shortRev or "dev");
       in
       {
         packages.default = pkgs.buildGoModule rec{
