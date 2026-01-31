@@ -11,10 +11,11 @@ import (
 	"github.com/simonhayward/gonix"
 )
 
+// Injected by Nix
 var (
 	Version   = "dev"
-	Commit    = "none"    // Injected by Nix
-	BuildTime = "unknown" // Injected by Nix
+	Commit    = "none"
+	BuildTime = "unknown"
 )
 
 func main() {
