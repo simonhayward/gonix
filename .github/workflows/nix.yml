@@ -34,8 +34,8 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v16
 
-      - name: Build Package
-        run: nix build .
+      - name: Build / Verify Nix Package
+        run: nix build . --print-build-logs
 
       - name: Check Build Output
         run: ./result/bin/gonix --version
