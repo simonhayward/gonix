@@ -32,7 +32,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v16
 
       - name: Verify Nix Package
-        run: nix build . --no-link --print-build-logs
+        run: nix build . --print-build-logs
 
       - name: Check Build Output
         run: ./result/bin/gonix --version
