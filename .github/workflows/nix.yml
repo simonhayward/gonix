@@ -34,7 +34,7 @@ jobs:
 
   build_release:
     needs: build_check
-    if: github.ref == 'refs/heads/main'
+    if: github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
 
     permissions:
