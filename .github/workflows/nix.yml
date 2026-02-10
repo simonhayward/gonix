@@ -1,19 +1,37 @@
 name: nix build
 
 on:
-  workflow_run:
-    workflows: ["tests"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build_check:
+  test:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          go-version-file: 'go.mod'
+
+      - name: Run go test
+        run: go test -v ./...
+
+  build_check:
+    needs: test
+    runs-on: ubuntu-latest
 
     permissions:
       contents: write
@@ -34,7 +52,7 @@ jobs:
 
   build_release:
     needs: build_check
-    if: ${{ github.event.workflow_run.head_branch == 'main' }}
+    if: github.ref_name == 'main'
     runs-on: ubuntu-latest
 
     permissions:
