@@ -10,4 +10,3 @@ SHA=$(nardump --sri "$OUT")
 
 sed -i "s|vendorHash = \".*\";|vendorHash = \"${SHA}\";|g" flake.nix
 rm -rf "$OUT"
-
