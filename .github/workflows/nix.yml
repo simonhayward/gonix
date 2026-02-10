@@ -34,14 +34,21 @@ jobs:
 
   build_release:
     needs: build_check
-    if: ${{ github.event.workflow_run.conclusion == 'success' &&
-            github.event.workflow_run.head_branch == 'main' }}
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.head_branch == 'main' || 
+       github.event.workflow_run.head_branch == 'refs/heads/main')
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
 
     steps:
+      - name: Inspect Branch
+        run: |
+          echo "Head Branch: ${{ github.event.workflow_run.head_branch }}"
+          echo "Triggering Event: ${{ github.event.workflow_run.event }}"
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
