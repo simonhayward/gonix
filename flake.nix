@@ -7,7 +7,7 @@
   };
 
   outputs = { self, nixpkgs, utils }:
-    utils.lib.eachDefaultSystem (system:
+    utils.lib.eachSystem  [ "x86_64-linux" ] (system:
       let
         pkgs = import nixpkgs { inherit system; };
         
@@ -20,20 +20,13 @@
         else "dev";
       in
       {
-        packages.default = pkgs.buildGoModule rec{
+        packages.default = pkgs.buildGo125Module rec{
           pname = "gonix";
           version = appVersion;
           src = ./.;
 
-          # You must update this hash whenever go.mod changes.
-          vendorHash = "sha256-UTkp3qXSpq/hljlAh4CWMhg4T0r7yJwDR/CPWqhtNe4=";
+          vendorHash = "sha256-UTkp3qXSpq/hljlAh4CWMhg4T0r7yJwDR/CPWqhtNe4="; # update this hash for go.mod changes.
 
-          preBuild = ''
-            export CGO_ENABLED=1
-          '';
-
-          # self.lastModified is the Unix timestamp of the last commit
-          # builtins.toString converts it for the ldflags
           ldflags = [
             "-X main.Version=${appVersion}"
             "-X main.Commit=${self.rev or "dirty"}"
@@ -46,8 +39,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             go_1_25
-            sqlite        # Provides SQLite 3.45+
-            pkg-config    # Needed if building go-sqlite3 with CGO
+            sqlite
           ];
 
           shellHook = ''

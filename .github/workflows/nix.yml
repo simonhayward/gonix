@@ -1,41 +1,52 @@
-name: Nix build
+name: nix build
 
 on:
-  push:
-    branches:
-      - '**'
+  workflow_run:
+    workflows: ["tests"]
+    types:
+      - completed
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  go-tests:
+  build_check:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v16
-
-      - name: Run Go Tests
-        run: nix develop -c go test -v ./...
-
-  release:
-    needs: go-tests
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v16
+        uses: DeterminateSystems/nix-installer-action@main
 
       - name: Verify Nix Package
         run: nix build . --print-build-logs
 
       - name: Check Build Output
         run: ./result/bin/gonix --version
+
+  build_release:
+    needs: build_check
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
 
       - name: Bump version and push tag
         id: tag_version
@@ -45,23 +56,22 @@ jobs:
           default_bump: patch
 
       - name: Build
-        run: nix build . --impure
+        run: nix build . --impure  # access env var: APP_VERSION
         env:
           APP_VERSION: ${{ steps.tag_version.outputs.new_tag || github.sha }}
 
       - name: Prepare Artifact
-        run: cp ./result/bin/gonix ./gonix-${{ steps.tag_version.outputs.new_tag }}-linux-amd64
+        run: cp ./result/bin/gonix ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux
 
       - name: Create Release
-        if: steps.tag_version.outputs.new_tag != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag_version.outputs.new_tag }}
           name: Release ${{ steps.tag_version.outputs.new_tag }}
-          body: ${{ steps.tag_version.outputs.changelog }}
-          files: ./gonix-${{ steps.tag_version.outputs.new_tag }}-linux-amd64
+          files: ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Output Version
-        run: ./gonix-${{ steps.tag_version.outputs.new_tag }}-linux-amd64 --version
+      - name: Build Output
+        run: ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux --version
+
