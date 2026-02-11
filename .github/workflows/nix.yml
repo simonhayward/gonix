@@ -37,16 +37,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
         with:
-          fetch-depth: 0
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - run: nix build . --print-build-logs
+      - run: nix flake check
 
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-
-      - name: Verify Nix Package
-        run: nix build . --print-build-logs
-
-      - name: Check Build Output
+      - name: Build Output
         run: ./result/bin/gonix --version
 
   build_release:
@@ -62,9 +59,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-
       - name: Bump version and push tag
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.2
@@ -73,14 +67,19 @@ jobs:
           default_bump: patch
 
       - name: Build
-        run: nix build . --impure  # access env var: APP_VERSION
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - run: nix build  . --impure  # access env var: APP_VERSION
         env:
           APP_VERSION: ${{ steps.tag_version.outputs.new_tag || github.sha }}
+      - run: nix flake check
 
       - name: Prepare Artifact
         run: cp ./result/bin/gonix ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux
 
-      - name: Create Release
+      - name: Release
+        id: release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag_version.outputs.new_tag }}
@@ -90,5 +89,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Output
-        run: ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux --version
+        run: |
+          echo ${{ fromJSON(steps.release.outputs.assets)[0].browser_download_url }}
+          ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux --version
 

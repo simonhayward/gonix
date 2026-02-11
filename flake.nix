@@ -10,7 +10,7 @@
     utils.lib.eachSystem  [ "x86_64-linux" ] (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        
+
         appVersion = 
         let 
           envV = builtins.getEnv "APP_VERSION"; 
@@ -38,6 +38,7 @@
 
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
+            bashInteractive
             go_1_25
             sqlite
           ];
