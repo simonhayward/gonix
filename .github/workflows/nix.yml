@@ -93,3 +93,10 @@ jobs:
           echo ${{ fromJSON(steps.release.outputs.assets)[0].browser_download_url }}
           ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux --version
 
+      - name: Deploy
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.PAT }}
+          repository: simonhayward/gonix-deploy
+          event-type: deploy-event
+          client-payload: '{"tag": "${{ steps.tag_version.outputs.new_tag }}", "url": "${{ fromJSON(steps.release.outputs.assets)[0].browser_download_url }}"}'
