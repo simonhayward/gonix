@@ -27,6 +27,11 @@
 
           vendorHash = "sha256-UTkp3qXSpq/hljlAh4CWMhg4T0r7yJwDR/CPWqhtNe4="; # update this hash for go.mod changes.
 
+          # static build for Distroless compatibility
+          preBuild = ''
+            export CGO_ENABLED=0
+          '';
+
           ldflags = [
             "-X main.Version=${appVersion}"
             "-X main.Commit=${self.rev or "dirty"}"
