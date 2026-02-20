@@ -1,12 +1,14 @@
 package gonix
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -29,15 +31,43 @@ func Run() error {
 	}
 	log.Printf("db: %s", sqlitefile)
 
-	statusHandler := func(w http.ResponseWriter, req *http.Request) {
-		io.WriteString(w, "ok\n")
-	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/.status", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "ok")
+	})
 
-	log.Println("Listening on :8080")
-	http.HandleFunc("/.status", statusHandler)
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		return err
-	}
+	var wait time.Duration
+	addr := fmt.Sprintf(":%s", "8080")
 
+	srv := &http.Server{
+		Addr:         addr,
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      mux,
+	}
+	go func() {
+		log.Printf("listening on %s\n", addr)
+		if err := srv.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
+	signal.Notify(c, os.Interrupt)
+
+	// Block until we receive our signal.
+	<-c
+
+	// Create a deadline to wait for.
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+	// Doesn't block if no connections, but will otherwise wait
+	// until the timeout deadline.
+	srv.Shutdown(ctx)
+
+	log.Println("shutting down application")
 	return nil
 }
