@@ -40,7 +40,7 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - run: nix build . --print-build-logs
+      - run: nix build .#default --print-build-logs
       - run: nix flake check
 
       - name: Build Output
