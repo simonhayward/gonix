@@ -64,15 +64,11 @@
             fakeRootCommands = ''
               mkdir -p tmp
               chmod 1777 tmp
-
-              mkdir -p bin
-              ln -s ${gonix}/bin/gonix bin/gonix
-              ln -s ${pkgs.busybox}/bin/sh bin/sh
             '';
 
             config = {
               Cmd = [ "/bin/gonix" ];
-              Env = [ "TMPDIR=/tmp" "HOME=/home/nonroot" "PATH=/bin" ];
+              Env = [ "TMPDIR=/tmp" "HOME=/home/nonroot" ];
               WorkingDir = "/home/nonroot";
             };
           };
