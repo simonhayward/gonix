@@ -59,16 +59,20 @@
           dockerImage = pkgs.dockerTools.buildLayeredImage {
             name = "registry.fly.io/gonix-deploy";
             tag = "${appVersion}";
-            contents = [ gonix ];
+            contents = [ gonix pkgs.busybox ];
 
             fakeRootCommands = ''
               mkdir -p tmp
               chmod 1777 tmp
+
+              mkdir -p bin
+              ln -s ${gonix}/bin/gonix bin/gonix
+              ln -s ${pkgs.busybox}/bin/sh bin/sh
             '';
 
             config = {
               Cmd = [ "/bin/gonix" ];
-              Env = [ "TMPDIR=/tmp" "HOME=/home/nonroot" ];
+              Env = [ "TMPDIR=/tmp" "HOME=/home/nonroot" "PATH=/bin" ];
               WorkingDir = "/home/nonroot";
             };
           };
