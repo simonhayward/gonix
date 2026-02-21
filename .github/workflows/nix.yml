@@ -75,6 +75,11 @@ jobs:
           APP_VERSION: ${{ steps.tag_version.outputs.new_tag || github.sha }}
       - run: nix flake check
 
+      - name: Build Output
+        run: |
+          docker load < ./result
+          docker run --rm registry.fly.io/gonix-deploy:${{ steps.tag_version.outputs.new_tag }} /bin/gonix --version
+
       - name: Prepare Artifact
         run: cp -L ./result ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux.tar.gz
 
@@ -87,6 +92,7 @@ jobs:
           files: ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
       # - name: Deploy
       #   uses: peter-evans/repository-dispatch@v4
