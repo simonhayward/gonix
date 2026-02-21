@@ -67,7 +67,7 @@
             '';
 
             config = {
-              Cmd = [ "${gonix}/bin/gonix" ];
+              Cmd = [ "/bin/gonix" ];
               Env = [ "TMPDIR=/tmp" "HOME=/home/nonroot" ];
               WorkingDir = "/home/nonroot";
             };
