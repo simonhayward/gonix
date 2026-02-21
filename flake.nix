@@ -12,15 +12,14 @@
         pkgs = import nixpkgs { inherit system; };
 
         appVersion = 
-        let 
-          envV = builtins.getEnv "APP_VERSION"; 
-        in
-        if envV != "" then envV 
-        else if (self ? shortRev) then self.shortRev 
-        else "dev";
-      in
-      {
-        packages.default = pkgs.buildGo125Module rec{
+          let 
+            envV = builtins.getEnv "APP_VERSION"; 
+          in
+            if envV != "" then envV 
+            else if (self ? shortRev) then self.shortRev 
+            else "dev";
+
+        gonix = pkgs.buildGo125Module {
           pname = "gonix";
           version = appVersion;
           src = ./.;
@@ -52,6 +51,27 @@
             echo "SQLite version: $(sqlite3 --version)"
             echo "Go version: $(go version)"
           '';
+        };
+      in
+      {
+        packages = {
+          default = gonix;
+          dockerImage = pkgs.dockerTools.buildLayeredImage {
+            name = "registry.fly.io/gonix-deploy";
+            tag = "${appVersion}";
+            contents = [ gonix ];
+
+            fakeRootCommands = ''
+              mkdir -p tmp
+              chmod 1777 tmp
+            '';
+
+            config = {
+              Cmd = [ "${gonix}/bin/gonix" ];
+              Env = [ "TMPDIR=/tmp" "HOME=/home/nonroot" ];
+              WorkingDir = "/home/nonroot";
+            };
+          };
         };
       });
 }
