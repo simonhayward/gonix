@@ -70,13 +70,18 @@ jobs:
         uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - run: nix build  . --impure  # access env var: APP_VERSION
+      - run: nix build .#dockerImage --impure  # access env var: APP_VERSION
         env:
           APP_VERSION: ${{ steps.tag_version.outputs.new_tag || github.sha }}
       - run: nix flake check
 
+      - name: Build Output
+        run: |
+          docker load < ./result
+          docker run --rm registry.fly.io/gonix-deploy:${{ steps.tag_version.outputs.new_tag }} /bin/gonix --version
+
       - name: Prepare Artifact
-        run: cp ./result/bin/gonix ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux
+        run: cp -L ./result ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux.tar.gz
 
       - name: Release
         id: release
@@ -84,19 +89,15 @@ jobs:
         with:
           tag_name: ${{ steps.tag_version.outputs.new_tag }}
           name: Release ${{ steps.tag_version.outputs.new_tag }}
-          files: ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux
+          files: ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Output
-        run: |
-          echo ${{ fromJSON(steps.release.outputs.assets)[0].browser_download_url }}
-          ./gonix-${{ steps.tag_version.outputs.new_tag }}-x86_64-linux --version
 
-      - name: Deploy
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ secrets.PAT }}
-          repository: simonhayward/gonix-deploy
-          event-type: deploy-event
-          client-payload: '{"tag": "${{ steps.tag_version.outputs.new_tag }}", "url": "${{ fromJSON(steps.release.outputs.assets)[0].browser_download_url }}"}'
+      # - name: Deploy
+      #   uses: peter-evans/repository-dispatch@v4
+      #   with:
+      #     token: ${{ secrets.PAT }}
+      #     repository: simonhayward/gonix-deploy
+      #     event-type: deploy-event
+      #     client-payload: '{"tag": "${{ steps.tag_version.outputs.new_tag }}", "url": "${{ fromJSON(steps.release.outputs.assets)[0].browser_download_url }}"}'
