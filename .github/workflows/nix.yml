@@ -40,7 +40,7 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - run: nix build . --print-build-logs
+      - run: nix build .#default --print-build-logs
       - run: nix flake check
 
       - name: Build Output
@@ -93,11 +93,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-
-      # - name: Deploy
-      #   uses: peter-evans/repository-dispatch@v4
-      #   with:
-      #     token: ${{ secrets.PAT }}
-      #     repository: simonhayward/gonix-deploy
-      #     event-type: deploy-event
-      #     client-payload: '{"tag": "${{ steps.tag_version.outputs.new_tag }}", "url": "${{ fromJSON(steps.release.outputs.assets)[0].browser_download_url }}"}'
+      - name: Deploy
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.PAT }}
+          repository: simonhayward/gonix-deploy
+          event-type: deploy-event
+          client-payload: '{"tag": "${{ steps.tag_version.outputs.new_tag }}"}'
