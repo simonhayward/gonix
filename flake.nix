@@ -39,6 +39,15 @@
 
           buildInputs = [ pkgs.sqlite ];
         };
+
+        # nix run 'nixpkgs#nix-prefetch-docker' -- --image-name gcr.io/distroless/static-debian12 --image-tag nonroot-amd64
+        distrolessBase = pkgs.dockerTools.pullImage {
+          imageName = "gcr.io/distroless/static-debian12";
+          imageDigest = "sha256:5074667eecabac8ac5c5d395100a153a7b4e8426181cca36181cd019530f00c8";
+          hash = "sha256-k00a6y/QB4UC9PM9fiQy0nK9trNdXo3KOP8nF0B3+iE=";
+          finalImageName = "gcr.io/distroless/static-debian12";
+          finalImageTag = "nonroot-amd64";
+        };
       in
       {
         devShells.default = pkgs.mkShell {
@@ -60,15 +69,11 @@
             name = "registry.fly.io/gonix-deploy";
             tag = "${appVersion}";
             contents = [ gonix ];
-
-            fakeRootCommands = ''
-              mkdir -p tmp
-              chmod 1777 tmp
-            '';
+            fromImage = distrolessBase;
 
             config = {
               Cmd = [ "/bin/gonix" ];
-              Env = [ "TMPDIR=/tmp" "HOME=/home/nonroot" ];
+              Env = [ "HOME=/home/nonroot" ];
               WorkingDir = "/home/nonroot";
             };
           };
