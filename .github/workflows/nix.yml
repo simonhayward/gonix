@@ -50,10 +50,12 @@ jobs:
         uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - run: nix build .#dockerImage --print-build-logs
+      - run: nix build .#dockerImage --print-build-logs --impure
+        env:
+          APP_VERSION: "ci"
       - run: |
           docker load < ./result
-          docker run --rm registry.fly.io/gonix-deploy:dev /bin/gonix --version
+          docker run --rm registry.fly.io/gonix-deploy:ci /bin/gonix --version
 
   build_release:
     needs: build_check
