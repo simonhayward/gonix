@@ -71,14 +71,9 @@
             contents = [ gonix ];
             fromImage = distrolessBase;
 
-            fakeRootCommands = ''
-              mkdir -p tmp
-              chmod 1777 tmp
-            '';
-
             config = {
               Cmd = [ "/bin/gonix" ];
-              Env = [ "TMPDIR=/tmp" "HOME=/home/nonroot" ];
+              Env = [ "HOME=/home/nonroot" ];
               WorkingDir = "/home/nonroot";
             };
           };
