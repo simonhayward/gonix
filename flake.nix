@@ -39,27 +39,27 @@
 
           buildInputs = [ pkgs.sqlite ];
         };
-
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            bashInteractive
-            go_1_25
-            sqlite
-          ];
-
-          shellHook = ''
-            echo "SQLite version: $(sqlite3 --version)"
-            echo "Go version: $(go version)"
-          '';
-        };
       in
       {
+        devShells.default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              bashInteractive
+              go_1_25
+              sqlite
+            ];
+
+           shellHook = ''
+             echo "SQLite version: $(sqlite3 --version)"
+             echo "Go version: $(go version)"
+           '';
+        };
+
         packages = {
           default = gonix;
           dockerImage = pkgs.dockerTools.buildLayeredImage {
             name = "registry.fly.io/gonix-deploy";
             tag = "${appVersion}";
-            contents = [ gonix pkgs.busybox ];
+            contents = [ gonix ];
 
             fakeRootCommands = ''
               mkdir -p tmp

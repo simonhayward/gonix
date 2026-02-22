@@ -43,8 +43,19 @@ jobs:
       - run: nix build .#default --print-build-logs
       - run: nix flake check
 
-      - name: Build Output
+      - name: Build Output App
         run: ./result/bin/gonix --version
+
+      - name: Build Output Docker
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - run: nix build .#dockerImage --print-build-logs --impure
+        env:
+          APP_VERSION: "ci"
+      - run: |
+          docker load < ./result
+          docker run --rm registry.fly.io/gonix-deploy:ci /bin/gonix --version
 
   build_release:
     needs: build_check
